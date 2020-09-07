@@ -1,0 +1,76 @@
+# Drupal8, MariaDB, Adminer
+#
+# Access via "http://localhost:8080"
+#   (or "http://$(docker-machine ip):8080" if using docker-machine)
+#
+# SQL Server Name: mariadb
+# SQL Root Password: mariadb
+# SQL Database: drupal8
+# SQL User: drupal8
+# SQL Password: drupal8
+#
+
+version: '3.2'
+
+services:
+
+  drupal:
+    image: drupal:8-apache
+    container_name: drupal
+    ports:
+      - "8080:80"
+    restart: always
+    volumes:
+      - type: bind
+        source: ./themes
+        target: /var/www/html/themes
+
+  adminer:
+    container_name: adminer
+    image: adminer
+    restart: always
+    ports:
+      - "8081:8080"
+    environment: 
+      - ADMINER_DEFAULT_SERVER=mariadb
+     
+  mariadb:
+    image: mariadb
+    container_name: mariadb
+    stop_grace_period: 30s
+    working_dir: /host
+    volumes:
+      - ./db:/host
+    environment:
+      - MYSQL_ROOT_PASSWORD=mariadb
+      - MYSQL_DATABASE=drupal8
+      - MYSQL_USER=drupal8
+      - MYSQL_PASSWORD=drupal8
+    restart: always
+    
+  web:
+    image: nginx:latest
+    ports:
+      - 8083:80
+    volumes:
+      - ./www:/var/www/html
+      - ./conf/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+  php:
+    build: ./conf/php
+    volumes:
+      - ./www:/var/www/html
+      - ./conf/php/php.ini:/usr/local/etc/php/php.ini
+  db:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: website
+    volumes:
+      - database:/var/lib/mysql
+  phpmyadmin:
+      image: phpmyadmin/phpmyadmin
+      restart: always
+      ports:
+        - 8084:80
+volumes:
+  database:
